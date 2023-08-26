@@ -3,6 +3,7 @@ package ru.potemkin.appcrypto2
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import com.google.gson.Gson
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -11,6 +12,7 @@ import ru.potemkin.appcrypto2.api.ApiFactory
 import ru.potemkin.appcrypto2.database.AppDatabase
 import ru.potemkin.appcrypto2.pojo.CoinPriceInfo
 import ru.potemkin.appcrypto2.pojo.CoinPriceInfoRawData
+import java.util.concurrent.TimeUnit
 
 class CoinViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -20,7 +22,14 @@ class CoinViewModel(application: Application) : AndroidViewModel(application) {
 
     val priceList = db.coinPriceInfoDao().getPriceList()
 
-    fun loadData() {
+    init{
+        loadData()
+    }
+    fun getDetailInfo(fSym: String): LiveData<CoinPriceInfo>{
+        return db.coinPriceInfoDao().getPriceInfoAboutCoin(fSym)
+    }
+
+    private fun loadData() {
         val disposable = ApiFactory.apiService.getTopCoinsInfo()
             .map {
                 it.data?.map {
@@ -29,6 +38,9 @@ class CoinViewModel(application: Application) : AndroidViewModel(application) {
             }
             .flatMap { ApiFactory.apiService.getFullPriceList(fSym = it) }
             .map { getPriceListFromRawData(it) }
+            .delaySubscription(10,TimeUnit.SECONDS)
+            .repeat()
+            .retry()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
