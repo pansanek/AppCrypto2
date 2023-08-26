@@ -1,5 +1,6 @@
 package ru.potemkin.appcrypto2
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -18,7 +19,8 @@ class CoinPriceListActivity : AppCompatActivity() {
         rvCoinPriceList.adapter = adapter
         adapter.onCoinClickListener = object : CoinInfoAdapter.OnCoinClickListener {
             override fun onCoinClick(coinPriceInfo: CoinPriceInfo) {
-                Log.d("TEST",coinPriceInfo.fromSymbol)
+                val intent = CoinDetailActivity.newIntent(this@CoinPriceListActivity, coinPriceInfo.fromSymbol)
+                startActivity(intent)
             }
 
         }
